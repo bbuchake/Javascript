@@ -3,9 +3,9 @@ var $tbody = document.querySelector("tbody");
 var $searchType = document.querySelector("#searchType");
 var $searchInput = document.querySelector("#searchText");
 var $searchBtn = document.querySelector("#search");
+
 //Set number of records per page for pagination
 var $records_per_page =document.querySelector("#recordsPerPage");
-
 var records_per_page = $records_per_page.value;
 
 // Add an event listener to the searchButton, call handleSearchButtonClick when clicked
@@ -17,12 +17,14 @@ var ufoSightings = dataSet;
 
 //Initialize Page 1
 var current_page = 1;
+var max_page = 0;
+var min_page = 0;
 
 window.onload = function() {
     // Render the table for the first time on page load and initialize page
     renderTable(1);
 };
-
+//Event for handling the number of pages to be displayed per page
 function updateRecordsPerPage() {
     records_per_page=$records_per_page.value;
     renderTable(1);
@@ -32,19 +34,37 @@ function updateRecordsPerPage() {
 // renderTable renders the ufoSightings to the tbody
 function renderTable(page) {
     $tbody.innerHTML = "";
-    paginate();
+
+    //Check page number and decide min_page and max_page for pagination
+    if(page % 10 > 0){
+
+        min_page = +(page - (page % 10)) + +1;
+        max_page = +page + +(10 - (page % 10));
+
+        paginate(min_page, max_page);
+
+        
+    }
+    else {
+
+        min_page = page - 9;
+        max_page = page;
+
+        paginate(min_page, max_page);
+    }
+        
     current_page = page;
+
     //Activate control for active page
-    $pageActive = document.querySelector("#page" + page);
+    $pageActive = document.querySelector("#page" + current_page);
     $pageActive.setAttribute("class", "page-item active");
 
+    
     // Validate page
-    if (page < 1) page = 1;
-    if (page > numPages()) page = numPages();
+    if (current_page < 1) current_page = 1;
+    if (current_page > numPages()) current_page = numPages();
 
-    console.log(page);
-
-    for (var i = (page-1) * records_per_page; i < (page * records_per_page) && i < dataSet.length; i++) {
+    for (var i = (current_page-1) * records_per_page; i < (current_page * records_per_page) && i < dataSet.length; i++) {
         // Get get the current ufo object and its fields    
         var ufo = ufoSightings[i];
         var fields = Object.keys(ufo);
@@ -62,13 +82,13 @@ function renderTable(page) {
 
     }
 
-    if (page == 1) {
+    if (current_page == 1) {
         document.querySelector('#pagePrev').setAttribute('class', 'page-item disabled');
     } else {
         document.querySelector('#pagePrev').setAttribute('class', 'page-item');
     }
 
-    if (page == numPages()) {
+    if (current_page == numPages()) {
         document.querySelector('#pageNext').setAttribute('class', 'page-item disabled');
     } else {
         document.querySelector('#pageNext').setAttribute('class', 'page-item');
@@ -146,9 +166,8 @@ function nextPage()
         renderTable(current_page);
     }
 }
-function paginate() {
-    //Get count of pages
-    var pageCount=numPages();
+function paginate(min_page, max_page) {
+
     //Get handle to ul
     var $pages = document.querySelector("#pages");
     //Clear ul
@@ -172,7 +191,7 @@ function paginate() {
     li = undefined;
 
     //Create li(s) for pages
-    for(x=1;x<=pageCount;x++) {
+    for(x=min_page;x<=max_page;x++) {
         var li = document.createElement("li"); //Create list item
         li.setAttribute("id", "page" + x); // add id
         li.setAttribute("class", "page-item") //add class
@@ -181,11 +200,14 @@ function paginate() {
         link.setAttribute('class', 'page-link');//add class
         link.setAttribute('id', 'link' + x); //add id
         link.innerHTML = x; //add text
+        
         link.addEventListener("click", function () {
             renderTable(this.innerHTML);
         }, false);
 
+
         li.appendChild(link);
+
         $pages.appendChild(li);
 
         link = undefined;
